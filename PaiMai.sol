@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 contract PaiMai{
     uint256 public  auctionToken = 1 ether;//最低起拍价
     address  onwer;//合约拥有者
-    uint256 starttime;//开始时间
+    bool starttime = false;//开始时间
     uint256 endtime; //结束时间
     mapping (address => uint256) jiaoyizhe;
     //最高价者
@@ -12,30 +12,31 @@ contract PaiMai{
     uint256 public token = msg.value;
     constructor(){
         onwer = msg.sender;
-        starttime = block.timestamp;
-        endtime = starttime + 120;
-       
-
+        }
+        //开始按钮只有发布交易的人才能开始
+    function started() public {
+        require(msg.sender == onwer,"you are not admin");
+         starttime = true;
+         endtime = block.timestamp + 60;
     }
     //争标函数
     function Auction() public payable  {
-        require(block.timestamp > starttime ,"hai wei dao pai mai shi jian");
+        require(starttime == true ,"hai wei dao pai mai shi jian");
         require(msg.value > auctionToken,"bu neng di yu qi pai jia");
         require(msg.value > token, "yi you ren chu le xiang tong de jia ge");
         require(block.timestamp < endtime,"pai mai yi jie shu");
-        jiaoyizhe[msg.sender] = msg.value;
+        //拍段这个用户是否是第一次出价
+        if(people != address(0)){
+            jiaoyizhe[people] +=token;
+        }
         people = msg.sender;
         token = msg.value;
+        //将用户加入哈希表
+
+        
        }
        
-        
-    //查看当前最高价函数
-    function chakan() public view  returns (uint256 zuigaojia,address zuigaochujiazhe) {
-            return (token,people);
-
-    }
-
-   //退款函数
+    //退款函数
    function tuikuan() public payable  {
          require(msg.sender !=people && msg.sender != onwer, "cheng jiao zhe he admin bu neng tui kuan");
          require(block.timestamp > endtime,"pai mai wei jie shu ");
@@ -54,6 +55,7 @@ contract PaiMai{
     //提款函数
     function tikuan() public  payable {
         require(msg.sender == onwer,"ni mei you ti kuan quan xian");
+        require(address(this).balance == token,"qi ta pai mai zhe wei tui kuan");
          payable(onwer).transfer(address(this).balance);
 
     }
